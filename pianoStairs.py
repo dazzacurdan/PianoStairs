@@ -2,10 +2,13 @@
 import threading
 import time
 import RPi.GPIO as GPIO
+import pygame
+from pygame import mixer
 
 GPIO.setmode(GPIO.BCM)
 lock = threading.Lock()
 aStopEvent = threading.Event()
+path = "/home/pi/PianoStairs/media"
 
 class UltraSound(threading.Thread):
     
@@ -15,6 +18,23 @@ class UltraSound(threading.Thread):
         self.gpioTrigger = trigger
         self.gpioEcho = echo
         self.stopEvent = event
+        #set up the mixer
+        freq = 44100     # audio CD quality
+        bitsize = -16    # unsigned 16 bit
+        channels = 1     # 1 is mono, 2 is stereo
+        buffer = 2048    # number of samples (experiment to get right sound)
+        pygame.mixer.init(freq, bitsize, channels, buffer)
+        pygame.mixer.init() #Initialize Mixer
+        print("Load file: "+path+"/"+self.name+".wav")
+        self.audio = pygame.mixer.Sound(path+"/"+self.name+".wav")
+        self.channel = pygame.mixer.Channel(1)
+        self.audio.set_volume(1.0)
+    
+    def play(self):
+        self.channel.play(self.audio)
+        while self.channel.get_busy():
+            pygame.time.wait(100)  #  wait in ms
+        self.channel.stop()
 
     def measureDistance(self):
         GPIO.output(self.gpioTrigger, False)                 #Set TRIG as LOW
@@ -56,14 +76,14 @@ class UltraSound(threading.Thread):
                 print (self.name+":Asked to stop")
                 break;
             distance = self.measureDistance()
-            print (self.name+" distance: "+str(distance)+" cm "+str(th))
+            #print (self.name+" distance: "+str(distance)+" cm "+str(th))
             if (distance > 2 and distance < th):
                 lock.acquire()
                 if lastPlayed != self.name:
                     print("Play: "+self.name)
+                    self.play()
                     lastPlayed = self.name
                 lock.release()
-            time.sleep(1)
         print (self.name+":Stopped")
 
 if __name__ == '__main__':
@@ -76,8 +96,8 @@ if __name__ == '__main__':
         #"myObj04": [aStopEvent,"f",23,24],
         #"myObj05": [aStopEvent,"g",23,24],
         #"myObj06": [aStopEvent,"a",23,24],
-        #"myObj05": [aStopEvent,"b",23,24],
-        #"myObj06": [aStopEvent,"c",23,24],
+        #"myObj07": [aStopEvent,"b",23,24],
+        #"myObj08": [aStopEvent,"c",23,24],
         }
     
     myInstances = [UltraSound(myClasses[thisClass][0],myClasses[thisClass][1],myClasses[thisClass][2],myClasses[thisClass][3]) for thisClass in myClasses.keys()]
