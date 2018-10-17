@@ -28,13 +28,28 @@ class UltraSound(threading.Thread):
         print("Load file: "+path+"/"+self.name+".wav")
         self.audio = pygame.mixer.Sound(path+"/"+self.name+".wav")
         self.channel = pygame.mixer.Channel(1)
-        self.audio.set_volume(1.0)
-    
+        self.audio.set_volume(0.7)
+        self.isToPlay = False
+        threading.Thread(target=self.play).start()
+
     def play(self):
-        self.channel.play(self.audio)
-        while self.channel.get_busy():
-            pygame.time.wait(100)  #  wait in ms
-        self.channel.stop()
+        _isToPlay = False
+        while True:
+            lock.acquire()
+            try:
+                _isToPlay = self.isToPlay
+            finally:
+                lock.release()
+            if( _isToPlay )
+                self.channel.play(self.audio)
+                while self.channel.get_busy():
+                    pygame.time.wait(10)  #  wait in ms
+                self.channel.stop()
+                lock.acquire()
+                try:
+                    self.isToPlay = False
+                finally:
+                    lock.release()
 
     def measureDistance(self):
         GPIO.output(self.gpioTrigger, False)                 #Set TRIG as LOW
@@ -49,7 +64,7 @@ class UltraSound(threading.Thread):
         pulse_end = time.time()
 
         while GPIO.input(self.gpioEcho)==0:               #Check whether the ECHO is LOW
-            pulse_start = time.time()              #Saves the last known time of LOW pulse
+            pulse_start = time.time()                      #Saves the last known time of LOW pulse
 
         while GPIO.input(self.gpioEcho)==1:               #Check whether the ECHO is HIGH
             pulse_end = time.time()                #Saves the last known time of HIGH pulse 
@@ -76,14 +91,17 @@ class UltraSound(threading.Thread):
                 print (self.name+":Asked to stop")
                 break;
             distance = self.measureDistance()
-            #print (self.name+" distance: "+str(distance)+" cm "+str(th))
+            print (self.name+" distance: "+str(distance)+" cm "+str(th))
             if (distance > 2 and distance < th):
                 lock.acquire()
-                if lastPlayed != self.name:
-                    print("Play: "+self.name)
-                    self.play()
-                    lastPlayed = self.name
-                lock.release()
+                try:
+                    if lastPlayed != self.name:
+                        print("Play: "+self.name)
+                        lastPlayed = self.name
+                        self.isToPlay = True
+                finally:
+                    lock.release()
+
         print (self.name+":Stopped")
 
 if __name__ == '__main__':
@@ -91,7 +109,7 @@ if __name__ == '__main__':
     myInstances = []
     myClasses = {
         "myObj01": [aStopEvent,"c1",23,24],
-        #"myObj02": [aStopEvent,"d",25,26],
+        "myObj02": [aStopEvent,"d",27,22],
         #"myObj03": [aStopEvent,"e",23,24],
         #"myObj04": [aStopEvent,"f",23,24],
         #"myObj05": [aStopEvent,"g",23,24],
@@ -104,18 +122,6 @@ if __name__ == '__main__':
     
     for thisObj in myInstances:
         thisObj.start()
-
-    #letters = ["c1", "d", "e", "f", "g", "a", "b", "c"]
-    #self.piano_notes = ["samples/"+letter+".wav" for letter in letters]
-    #ultraSound1 = UltraSound(aStopEvent,"a",23,24)
-    #ultraSound1 = UltraSound("b",23,24)
-    #ultraSound1 = UltraSound("c",23,24)
-    #ultraSound1 = UltraSound("d",23,24)
-    #ultraSound1 = UltraSound("e",23,24)
-    #ultraSound1 = UltraSound("f",23,24)
-    #ultraSound1 = UltraSound("g",23,24)
-    
-    #ultraSound1.start()
 
     try:
         while True :
