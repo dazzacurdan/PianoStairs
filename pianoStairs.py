@@ -6,7 +6,6 @@ import pygame
 from pygame import mixer
 
 GPIO.setmode(GPIO.BCM)
-lock = threading.Lock()
 aStopEvent = threading.Event()
 path = "/home/pi/PianoStairs/media"
 
@@ -28,28 +27,17 @@ class UltraSound(threading.Thread):
         print("Load file: "+path+"/"+self.name+".wav")
         self.audio = pygame.mixer.Sound(path+"/"+self.name+".wav")
         self.channel = pygame.mixer.Channel(1)
-        self.audio.set_volume(0.7)
-        self.isToPlay = False
-        threading.Thread(target=self.play).start()
+        self.audio.set_volume(1.0)
+        self.isPlaying = False
 
     def play(self):
-        _isToPlay = False
-        while True:
-            lock.acquire()
-            try:
-                _isToPlay = self.isToPlay
-            finally:
-                lock.release()
-            if( _isToPlay )
-                self.channel.play(self.audio)
-                while self.channel.get_busy():
-                    pygame.time.wait(10)  #  wait in ms
-                self.channel.stop()
-                lock.acquire()
-                try:
-                    self.isToPlay = False
-                finally:
-                    lock.release()
+        print("Enable Play: "+self.name)
+        self.isPlaying = True
+        self.channel.play(self.audio)
+        while self.channel.get_busy():
+            pygame.time.wait(10)  #  wait in ms
+        self.channel.stop()
+        self.isPlaying = False
 
     def measureDistance(self):
         GPIO.output(self.gpioTrigger, False)                 #Set TRIG as LOW
@@ -76,8 +64,6 @@ class UltraSound(threading.Thread):
         return distance
 
     def run(self):
-        global lastPlayed
-        lastPlayed = ""
         th=30
         pulse_start=time.time()
         pulse_end=time.time()
@@ -92,16 +78,8 @@ class UltraSound(threading.Thread):
                 break;
             distance = self.measureDistance()
             print (self.name+" distance: "+str(distance)+" cm "+str(th))
-            if (distance > 2 and distance < th):
-                lock.acquire()
-                try:
-                    if lastPlayed != self.name:
-                        print("Play: "+self.name)
-                        lastPlayed = self.name
-                        self.isToPlay = True
-                finally:
-                    lock.release()
-
+            if (distance > 2 and distance < th and (not self.isPlaying)):
+                self.play()
         print (self.name+":Stopped")
 
 if __name__ == '__main__':
