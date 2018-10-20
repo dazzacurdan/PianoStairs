@@ -29,9 +29,10 @@ class UltraSound(threading.Thread):
         self.channel = pygame.mixer.Channel(1)
         self.audio.set_volume(1.0)
         self.isPlaying = False
+        self.enable = False
 
     def play(self):
-        print("Enable Play: "+self.name)
+        print("Play: "+self.name)
         self.isPlaying = True
         self.channel.play(self.audio)
         while self.channel.get_busy():
@@ -77,9 +78,16 @@ class UltraSound(threading.Thread):
                 print (self.name+":Asked to stop")
                 break;
             distance = self.measureDistance()
-            print (self.name+" distance: "+str(distance)+" cm "+str(th))
-            if (distance > 2 and distance < th and (not self.isPlaying)):
-                self.play()
+            #print (self.name+" distance: "+str(distance)+" cm "+str(th))
+            if (distance > 2 and distance < th):
+                if (not self.enable):
+                    print ("ENABLE distance: "+str(distance)+" cm "+str(th))
+                    self.enable = True
+                    if not self.isPlaying:
+                        self.play()
+            else:
+                #print ("DISABLE distance: "+str(distance)+" cm "+str(th))
+                self.enable = False
         print (self.name+":Stopped")
 
 if __name__ == '__main__':
