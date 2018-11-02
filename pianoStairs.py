@@ -38,6 +38,7 @@ class UltraSound(threading.Thread):
         while self.channel.get_busy():
             pygame.time.wait(10)  #  wait in ms
         self.channel.stop()
+        print ("Finish Play")
         self.isPlaying = False
 
     def measureDistance(self):
@@ -91,17 +92,15 @@ class UltraSound(threading.Thread):
         print (self.name+":Stopped")
 
 if __name__ == '__main__':
-    
+    #[[12,5],[23,24],[27,22],[4,17],[6,13],[26,16]]
     myInstances = []
     myClasses = {
-        "myObj01": [aStopEvent,"c1",23,24],
-        "myObj02": [aStopEvent,"d",27,22],
-        #"myObj03": [aStopEvent,"e",23,24],
-        #"myObj04": [aStopEvent,"f",23,24],
-        #"myObj05": [aStopEvent,"g",23,24],
-        #"myObj06": [aStopEvent,"a",23,24],
-        #"myObj07": [aStopEvent,"b",23,24],
-        #"myObj08": [aStopEvent,"c",23,24],
+        "myObj01": [aStopEvent,"c1",12,5],
+        "myObj02": [aStopEvent,"d",23,24],
+        "myObj03": [aStopEvent,"e",27,22],
+        "myObj04": [aStopEvent,"f",4,17],
+        "myObj05": [aStopEvent,"g",6,13],
+        "myObj06": [aStopEvent,"a",26,16],
         }
     
     myInstances = [UltraSound(myClasses[thisClass][0],myClasses[thisClass][1],myClasses[thisClass][2],myClasses[thisClass][3]) for thisClass in myClasses.keys()]
